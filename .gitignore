@@ -3,14 +3,17 @@ __pycache__/
 *.pyc
 .venv/
 .env
+env
 
-# Data + outputs (keep repo lightweight)
+# Data + results (keep repo lightweight)
 data/
-outputs/data/
-outputs/figures/
-outputs/tables/
+results/data/
+results/figures/
+results/tables/
 
 # OS / editor
 .DS_Store
 Thumbs.db
 .vscode/
+
+.snakemake
