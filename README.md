@@ -1,30 +1,32 @@
 # Perturb-seq Analysis with PertPy
 
-A reproducible computational workflow for analyzing CRISPR Perturb-seq data using **PertPy, Scanpy, Python, and Snakemake**.
+A reproducible and containerized workflow for analyzing CRISPR Perturb-seq data using **PertPy, Scanpy, Python, Snakemake, and Docker**.
 
-This project uses the Norman et al. (2019) CRISPR Perturb-seq benchmark dataset to characterize transcriptional responses to genetic perturbations and identify perturbations that produce distinct transcriptional phenotypes relative to control cells.
+This project analyzes the Norman & Weissman 2019 CRISPR Perturb-seq benchmark dataset to characterize transcriptional responses to genetic perturbations and identify perturbations that produce distinct transcriptional phenotypes relative to control cells.
 
-> **Project status:** Complete core analysis; workflow automation and containerization in progress.
+> **Project status:** Core analysis, workflow automation, and containerization complete.
 
 ---
 
 ## Overview
 
-Perturb-seq combines pooled genetic perturbation with single-cell RNA sequencing to measure how targeted perturbations affect cellular transcriptional states.
+Perturb-seq combines pooled genetic perturbation with single-cell RNA sequencing to measure how targeted genetic perturbations alter cellular transcriptional states.
 
-This project explores a reproducible analysis workflow that:
+This project explores a reproducible computational workflow that:
 
-1. Loads and inspects a standardized Perturb-seq dataset
-2. Prepares perturbation and control labels
-3. Generates pseudobulk expression profiles for individual perturbations
-4. Calculates perturbation-vs-control transcriptional differences
-5. Characterizes perturbation-specific gene-level effects
-6. Identifies perturbations with the largest overall transcriptional deviations from control
-7. Projects perturbations into transcriptional space using PCA and UMAP
-8. Produces reproducible tables and visualizations
-9. Orchestrates the complete analysis using Snakemake
+* Loads and inspects a standardized Perturb-seq dataset
+* Prepares perturbation and control labels
+* Generates pseudobulk expression profiles for individual perturbations
+* Calculates perturbation-vs-control transcriptional differences
+* Identifies genes with the largest perturbation-specific effects
+* Quantifies the overall transcriptional effect of each perturbation
+* Ranks perturbations according to their transcriptional effect size
+* Projects perturbations into transcriptional space using PCA and UMAP
+* Generates reproducible tables and visualizations
+* Automates the complete analysis using Snakemake
+* Packages the analysis environment using Docker
 
-The workflow is designed to separate **scientific analysis from workflow orchestration**, making individual analysis components reusable and allowing the complete workflow to be reproduced from a clean environment.
+The workflow separates **scientific analysis from workflow orchestration**, allowing individual analysis components to be reused while making the complete pipeline reproducible.
 
 ---
 
@@ -32,74 +34,96 @@ The workflow is designed to separate **scientific analysis from workflow orchest
 
 ### Which perturbations produce the most distinct transcriptional phenotypes relative to controls?
 
-Rather than only examining individual differentially affected genes, this project represents each perturbation as a transcriptional effect profile relative to control cells.
+Rather than examining only individual differentially affected genes, each perturbation is represented by its transcriptional difference relative to control.
 
-For a perturbation (P) and control profile (C):
+For perturbation (P) and control profile (C):
 
-[E_P = P - C]
+[
+E_P = P - C
+]
 
 where (E_P) represents the transcriptional effect associated with perturbation (P).
 
-The overall magnitude of this effect is then quantified to identify perturbations producing the largest transcriptomic deviations from control.
+The overall magnitude of this effect is used to rank perturbations according to the extent of their transcriptional deviation from control.
 
-This provides a complementary perspective to gene-level analysis:
+This provides two complementary levels of analysis:
 
-* **Gene-level analysis:** Which genes are most strongly affected by each perturbation?
-* **Perturbation-level analysis:** Which perturbations produce the strongest overall transcriptional phenotype?
-
----
-
-## Dataset
-
-The analysis uses the **Norman & Weissman 2019 CRISPR Perturb-seq dataset**, distributed as a standardized AnnData object through the scPerturb ecosystem.
-
-The dataset contains single-cell transcriptomic profiles associated with genetic perturbations and control conditions.
-
-The original tutorial that inspired this project is available here:
-
-https://github.com/TaufiaHussain/pertpy-perturbation-analysis
-
-This repository extends that workflow with additional perturbation-level analysis and workflow automation.
+| Analysis           | Question                                                                     |
+| ------------------ | ---------------------------------------------------------------------------- |
+| Gene-level         | Which genes are most strongly affected by each perturbation?                 |
+| Perturbation-level | Which perturbations produce the strongest overall transcriptional phenotype? |
 
 ---
 
-## Analysis Workflow
+## Workflow
 
 ```text
-             Norman & Weissman
-             Perturb-seq Data
-                    │
-                    ▼
-           Load & Inspect Data
-                    │
-                    ▼
-        Prepare Perturbation Labels
-                    │
-                    ▼
-              Pseudobulk
-         Profiles per Perturbation
-                    │
-                    ▼
-        Perturbation − Control
-          Expression Profiles
-                    │
-          ┌─────────┴─────────┐
-          ▼                   ▼
-     Gene-level           Perturbation-level
-       effects                 effects
-          │                   │
-          ▼                   ▼
-    Top affected          Effect magnitude
-        genes                 ranking
-          │                   │
-          └─────────┬─────────┘
-                    ▼
-          Perturbation Space
-             PCA / UMAP
-                    │
-                    ▼
-          Biological Interpretation
+                  Perturb-seq Dataset
+                         │
+                         ▼
+                Load & Inspect Data
+                         │
+                         ▼
+              Prepare Perturbation Labels
+                         │
+                         ▼
+                    Pseudobulk
+               Profiles per Perturbation
+                         │
+                         ▼
+               Perturbation − Control
+                 Expression Profiles
+                         │
+             ┌───────────┴───────────┐
+             ▼                       ▼
+       Gene-level Effects     Perturbation-level
+             │                   Effects
+             ▼                       ▼
+      Top Affected Genes       Effect Magnitude
+             │                       │
+             └───────────┬───────────┘
+                         ▼
+                Perturbation Space
+                   PCA / UMAP
+                         │
+                         ▼
+              Biological Interpretation
 ```
+
+---
+
+## Pipeline
+
+The complete analysis is orchestrated using **Snakemake**.
+
+```text
+download_data
+      │
+      ▼
+load_and_inspect
+      │
+      ▼
+prepare_labels
+      │
+      ▼
+pseudobulk
+      │
+      ├───────────────┐
+      ▼               ▼
+condition_space    top_genes
+      │               │
+      │               ▼
+      │          gene-level effects
+      │
+      └───────────────┐
+                      ▼
+              top_perturbation_report
+                      │
+                      ▼
+             ranked perturbations
+```
+
+The workflow is defined in `Snakefile`, while individual scientific analyses are implemented as Python scripts in `src/`.
 
 ---
 
@@ -107,196 +131,256 @@ This repository extends that workflow with additional perturbation-level analysi
 
 ```text
 pertpy-perturbation-analysis/
-├── data/
-│   └──                       # Local dataset; not tracked by Git
 │
-├── outputs/
-│   ├── data/                 # Intermediate AnnData objects
-│   ├── figures/              # PCA / UMAP visualizations
-│   └── tables/               # Analysis results
-│
-├── scripts/
+├── src/
 │   ├── 00_download_data.py
 │   ├── 01_load_and_inspect.py
 │   ├── 02_prepare_labels.py
 │   ├── 03_pertpy_pseudobulk.py
 │   ├── 04_condition_space_plots.py
 │   ├── 05_top_genes_reports.py
-│   └── 06_perturbation_effects.py
+│   └── 06_top_pertubations_report.py
+│
+├── data/
+│   └── NormanWeissman2019_filtered.h5ad
+│
+├── results/
+│   ├── data/
+│   ├── figures/
+│   └── tables/
 │
 ├── Snakefile
-├── requirements.txt
 ├── Dockerfile
-├── README.md
-└── LICENSE
+├── requirements.txt
+├── .gitignore
+├── LICENSE
+└── README.md
 ```
+
+The dataset and generated results are excluded from version control where appropriate.
 
 ---
 
-## Pipeline Components
+## Analysis Components
 
 ### 1. Dataset Download
 
-`00_download_data.py`
+`src/00_download_data.py`
 
-Downloads the standardized Perturb-seq AnnData dataset and stores it locally.
+Downloads the standardized Norman & Weissman 2019 Perturb-seq dataset.
 
 ### 2. Dataset Inspection
 
-`01_load_and_inspect.py`
+`src/01_load_and_inspect.py`
 
-Examines the AnnData object, including cell-level metadata and available annotations, and generates checkpoint and metadata summary files.
+Loads the AnnData object and summarizes cell-level and gene-level metadata.
+
+Outputs include:
+
+* AnnData checkpoint
+* observation metadata
+* variable metadata
+* metadata summary tables
 
 ### 3. Perturbation Label Preparation
 
-`02_prepare_labels.py`
+`src/02_prepare_labels.py`
 
-Creates a standardized perturbation label used throughout the PertPy workflow and identifies the appropriate control condition.
+Creates a standardized perturbation label and identifies the appropriate control condition for downstream PertPy analysis.
 
 ### 4. Pseudobulk Analysis
 
-`03_pertpy_pseudobulk.py`
+`src/03_pertpy_pseudobulk.py`
 
-Generates one pseudobulk transcriptional profile per perturbation and calculates perturbation-vs-control expression differences.
+Generates pseudobulk transcriptional profiles for individual perturbations and calculates perturbation-vs-control expression differences.
 
-The resulting AnnData object contains the `control_diff` representation used for downstream analysis.
+The resulting `AnnData` object contains the `control_diff` representation used for downstream analysis.
 
-### 5. Perturbation Space Visualization
+### 5. Perturbation Space
 
-`04_condition_space_plots.py`
+`src/04_condition_space_plots.py`
 
-Projects perturbation-level transcriptional profiles into lower-dimensional space using PCA and UMAP.
+Projects perturbation-level transcriptional profiles into lower-dimensional space using:
 
-These representations allow perturbations with similar transcriptional phenotypes to be compared.
+* Principal Component Analysis (PCA)
+* Uniform Manifold Approximation and Projection (UMAP)
+
+This allows perturbations with similar transcriptional phenotypes to be compared in perturbation space.
 
 ### 6. Gene-level Perturbation Effects
 
-`05_top_genes_reports.py`
+`src/05_top_genes_reports.py`
 
-For each perturbation, identifies the genes exhibiting the largest absolute transcriptional differences relative to control.
+For each perturbation, identifies the genes exhibiting the largest absolute expression differences relative to control.
 
-The resulting table contains:
+Output:
 
-* perturbation
-* rank
-* gene
-* control difference
-* absolute difference
+```text
+results/tables/top_genes_per_perturbation_top30.csv
+```
 
 ### 7. Perturbation-level Effect Analysis
 
-`06_perturbation_effects.py`
+`src/06_top_pertubations_report.py`
 
-Quantifies the overall magnitude of transcriptional change associated with each perturbation.
+Quantifies and ranks the overall transcriptional effect associated with each perturbation.
 
-The analysis reports:
+The analysis summarizes:
 
-* overall transcriptional effect magnitude
-* mean absolute gene-level change
-* maximum individual gene-level change
+* overall transcriptional effect size
+* mean absolute gene-level difference
+* maximum gene-level difference
 * number of genes contributing to the calculation
 
-Perturbations can then be ranked according to the magnitude of their transcriptional phenotype.
+Outputs include:
+
+```text
+results/tables/top_perturbations_by_effect_size.csv
+results/figures/top_perturbations_stats.png
+```
 
 ---
 
 ## Outputs
 
-Representative outputs include:
+The pipeline generates intermediate AnnData objects, visualizations, and analysis tables.
 
-### Intermediate data
+### Data
 
 ```text
-outputs/data/atlas_loaded.h5ad
-outputs/data/atlas_prepared.h5ad
-outputs/data/pseudobulk_by_condition*.h5ad
-outputs/data/pseudobulk_control_diff*.h5ad
+results/data/
+├── atlas_loaded.h5ad
+├── atlas_prepared.h5ad
+├── pseudobulk_by_condition.h5ad
+└── pseudobulk_control_diff.h5ad
 ```
 
 ### Figures
 
 ```text
-outputs/figures/pca_condition_space.png
-outputs/figures/umap_condition_space.png
+results/figures/
+├── pca_condition_space.png
+├── umap_condition_space.png
+└── top_perturbations_stats.png
 ```
 
 ### Tables
 
 ```text
-outputs/tables/obs_columns.csv
-outputs/tables/obs_nunique_top30.csv
-outputs/tables/top_genes_per_perturbation_top30.csv
-outputs/tables/perturbation_transcriptional_effects.csv
+results/tables/
+├── obs_columns.csv
+├── var_columns.csv
+├── obs_nunique_top30.csv
+├── top_genes_per_perturbation_top30.csv
+└── top_perturbations_by_effect_size.csv
 ```
 
 ---
 
 ## Reproducibility
 
-The analysis is orchestrated using **Snakemake**, with individual Python scripts responsible for the scientific analysis.
+The workflow is designed to be executed from a clean computational environment using Snakemake.
 
-The intended workflow is:
+### Run locally
+
+Install the required dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+Then execute:
 
 ```bash
 snakemake --cores 4
 ```
 
+Snakemake determines the required execution order from the workflow dependencies and generates the complete set of outputs.
+
+---
+
+## Docker
+
+The analysis environment is containerized using Docker.
+
+Build the image:
+
 ```bash
-docker run --rm pertpy-analysis
-
-docker run --rm \
-  -v "$(pwd):/workspace" \
-  pertpy-analysis
-
-docker run --rm \
-  -v "/path/to/my/project:/workspace" \
-  pertpy-analysis
-
-docker run --rm -it \
-  -v "$(pwd):/workspace" \
-  pertpy-analysis \
-  bash
+docker build -t pertpy-perturbation-analysis .
 ```
 
-This allows the complete analysis to be reproduced from the workflow definition while preserving intermediate outputs and dependencies between analysis stages.
+Run the complete workflow:
+
+```bash
+docker run --rm \
+    -v "$(pwd):/workspace" \
+    pertpy-perturbation-analysis
+```
+
+The container includes the Python analysis environment and Snakemake required to execute the workflow.
+
+This provides a reproducible computational environment independent of the host Python installation.
 
 ---
 
 ## Technologies
 
-### Biological analysis
+### Single-cell & perturbation analysis
 
 * Perturb-seq
-* single-cell RNA sequencing
-* pseudobulk analysis
-* perturbation analysis
-* transcriptional profiling
+* PertPy
+* Scanpy
+* AnnData
+* Pseudobulk analysis
 
-### Computational tools
+### Programming & analysis
 
 * Python
-* Scanpy
-* PertPy
-* AnnData
 * NumPy
 * Pandas
 * Matplotlib
+* scikit-learn
 
-### Reproducibility & infrastructure
+### Workflow & reproducibility
 
 * Snakemake
 * Docker
-* Git / GitHub
+* Git
+* GitHub
 
 ---
 
-## What I Learned
+## Results
 
-This project was undertaken to develop hands-on experience with **Perturb-seq and perturbational single-cell analysis**.
+### Perturbation Space
 
-My previous computational biology work has focused on single-cell and spatial transcriptomics, DNA methylation, multi-omics analysis, machine learning, and reproducible bioinformatics workflows. Perturb-seq provides a natural extension of these skills by adding an explicit experimental perturbation to single-cell transcriptomic profiling.
+PCA and UMAP representations are used to visualize relationships between perturbations based on their transcriptional effects.
 
-The project also provided an opportunity to explore how perturbation-level representations can be used to move from conventional cell-level analysis toward characterization of **functional transcriptional phenotypes**.
+![PCA perturbation space](results/figures/pca_condition_space.png)
+
+![UMAP perturbation space](results/figures/umap_condition_space.png)
+
+### Perturbation Effect Size
+
+Perturbations are ranked according to the magnitude of their transcriptional deviation from control.
+
+![Top perturbations](results/figures/top_perturbations_stats.png)
+
+### Top Perturbation-associated Genes
+
+For each perturbation, the genes with the largest absolute transcriptional differences from control are reported.
+
+---
+
+## Motivation
+
+This project was developed to gain hands-on experience with **perturbational single-cell genomics** and to explore how genetic perturbations can be represented as transcriptional phenotypes.
+
+The analysis builds on experience with single-cell and spatial transcriptomics, multi-omics analysis, statistical modelling, machine learning, and reproducible bioinformatics workflows.
+
+Perturb-seq provides a natural extension of these approaches by introducing an explicit experimental perturbation and enabling computational analysis of the resulting transcriptional response.
+
+The project also demonstrates a broader principle in computational biology: moving from exploratory analysis toward **reproducible, modular, and portable scientific workflows**.
 
 ---
 
@@ -306,16 +390,17 @@ This project builds upon the original PertPy Perturb-seq workflow developed by *
 
 https://github.com/TaufiaHussain/pertpy-perturbation-analysis
 
-The original workflow was reproduced and subsequently extended with:
+The original workflow was reproduced and extended with:
 
 * perturbation-level transcriptional effect analysis
-* additional result tables
+* perturbation effect-size ranking
+* additional result tables and visualizations
 * Snakemake workflow orchestration
 * Docker-based reproducibility
 
-The underlying dataset is based on the Norman et al. (2019) Perturb-seq study and its standardized scPerturb distribution.
+The underlying dataset is based on the Norman et al. (2019) CRISPR Perturb-seq study and its standardized scPerturb distribution.
 
-Please refer to the original repository and associated publications for the original analysis and dataset attribution.
+Please refer to the original repository and associated publications for the original workflow and dataset attribution.
 
 ---
 
