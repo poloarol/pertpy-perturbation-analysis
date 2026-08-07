@@ -241,9 +241,24 @@ The intended workflow is:
 snakemake --cores 4
 ```
 
-This allows the complete analysis to be reproduced from the workflow definition while preserving intermediate outputs and dependencies between analysis stages.
+```bash
+docker run --rm pertpy-analysis
 
-The project is also being containerized with **Docker** to provide a consistent computational environment across systems.
+docker run --rm \
+  -v "$(pwd):/workspace" \
+  pertpy-analysis
+
+docker run --rm \
+  -v "/path/to/my/project:/workspace" \
+  pertpy-analysis
+
+docker run --rm -it \
+  -v "$(pwd):/workspace" \
+  pertpy-analysis \
+  bash
+```
+
+This allows the complete analysis to be reproduced from the workflow definition while preserving intermediate outputs and dependencies between analysis stages.
 
 ---
 
