@@ -356,15 +356,9 @@ This provides a reproducible computational environment independent of the host P
 
 PCA and UMAP representations are used to visualize relationships between perturbations based on their transcriptional effects.
 
-![PCA perturbation space](results/figures/pca_condition_space.png)
-
-![UMAP perturbation space](results/figures/umap_condition_space.png)
-
 ### Perturbation Effect Size
 
 Perturbations are ranked according to the magnitude of their transcriptional deviation from control.
-
-![Top perturbations](results/figures/top_perturbations_stats.png)
 
 ### Top Perturbation-associated Genes
 
